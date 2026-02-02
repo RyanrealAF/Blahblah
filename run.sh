@@ -1,13 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# USAGE: ./run.sh <input_wav> <output_dir> [seed]
+# USAGE:
+# CLI MODE: ./run.sh <input_wav> <output_dir> [seed]
+# WEB MODE: ./run.sh --ui
+
+if [[ "${1:-}" == "--ui" ]]; then
+    echo "[*] Starting Neural Audio Lab UI on http://localhost:5000"
+    exec python3 web/app.py
+fi
 
 INPUT_FILE="${1:-/data/input.wav}"
 OUTPUT_DIR="${2:-results}"
 SEED=${3:-42}
 
-echo "[*] System Start. Seed: $SEED"
+echo "[*] CLI Mode. Input: $INPUT_FILE"
 mkdir -p "$OUTPUT_DIR"
 
 # Save environment info

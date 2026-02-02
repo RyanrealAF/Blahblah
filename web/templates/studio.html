@@ -7,70 +7,86 @@
 </head>
 <body>
     <div class="studio-rack">
-        
+
         <!-- HEADER -->
         <div class="rack-header">
-            <div class="brand">AI STUDIO <span class="blink">●</span> ONLINE</div>
-            <div class="cpu-load">SYS_SEED: 42 // ENV: DOCKER</div>
+            <div class="brand">NEURAL<span>AUDIO</span> LAB</div>
+            <div class="sys-info">
+                <span class="led-indicator active blink"></span>
+                SYS_READY // SEED: 42 // BUFFER: 44.1kHz
+            </div>
         </div>
 
-        <!-- MODULE A: INPUT & SPECTRAL ANALYSIS -->
-        <div class="rack-module">
-            <div class="module-title">TRACK A: SPECTRAL INGEST</div>
+        <!-- MODULE A: TRANSCRIPTION ENGINE -->
+        <div class="rack-module" id="moduleA">
+            <div class="module-title">Track A: Transcription Engine</div>
             <div class="control-panel">
                 <div class="file-drop-zone" id="dropZone">
                     <input type="file" id="audioInput" accept=".wav" hidden>
-                    <p>DROP WAV FILE HERE OR CLICK TO LOAD</p>
+                    <p>LOAD SOURCE TAPE (.WAV)</p>
                 </div>
-                <div class="knob-group">
-                    <label>CONFIDENCE THRESHOLD</label>
-                    <input type="range" id="thresholdKnob" min="0.1" max="0.9" step="0.1" value="0.6">
-                    <span id="threshValue" class="led-display">0.6</span>
+
+                <div class="knob-container">
+                    <span class="knob-label">Threshold</span>
+                    <div class="knob-wrapper">
+                        <div class="knob" id="thresholdKnob" data-min="0.1" data-max="0.9" data-value="0.6">
+                            <div class="knob-indicator"></div>
+                        </div>
+                    </div>
+                    <span id="threshValue" class="led-display">0.60</span>
                 </div>
-                <button id="transcribeBtn" class="rack-btn disabled">INITIATE TRANSCRIBE</button>
+
+                <button id="transcribeBtn" class="rack-btn disabled">Initiate Track A</button>
             </div>
-            <!-- Real Canvas Waveform -->
-            <canvas id="inputCanvas" width="800" height="100"></canvas>
-            <div class="console-log" id="logTrackA">WAITING FOR INPUT...</div>
+
+            <canvas id="inputCanvas" width="820" height="120"></canvas>
+            <div class="console-log" id="logTrackA">SYSTEM IDLE. AWAITING INPUT...</div>
         </div>
 
-        <!-- MODULE B: SYNTHESIS & HUMANIZATION -->
-        <div class="rack-module">
-            <div class="module-title">TRACK B: NEURAL RENDERER</div>
+        <!-- MODULE B: EXPRESSIVE RENDERER -->
+        <div class="rack-module" id="moduleB">
+            <div class="module-title">Track B: Expressive Renderer</div>
             <div class="control-panel">
-                <div class="switch-group">
-                    <label>HUMANIZATION</label>
+                <div class="knob-container">
+                    <span class="knob-label">Humanize</span>
                     <label class="toggle-switch">
                         <input type="checkbox" id="humanizeSwitch" checked>
                         <span class="slider"></span>
                     </label>
                 </div>
-                <div class="knob-group">
-                    <label>SEED VARIATION</label>
-                    <input type="number" id="seedInput" value="42" class="led-input">
+
+                <div class="knob-container">
+                    <span class="knob-label">Seed</span>
+                    <input type="number" id="seedInput" value="42" class="led-display" style="width: 60px; height: 30px; margin-top: 10px;">
                 </div>
-                <button id="renderBtn" class="rack-btn disabled">RENDER AUDIO</button>
+
+                <button id="renderBtn" class="rack-btn disabled">Render Track B</button>
             </div>
-            
-            <!-- Output Visualization -->
-            <canvas id="outputCanvas" width="800" height="100"></canvas>
-            
+
+            <canvas id="outputCanvas" width="820" height="120"></canvas>
+
             <div class="metrics-grid" id="metricsDisplay">
                 <div class="metric-box">
-                    <span class="label">SPECTRAL MSE</span>
+                    <span class="label">Spectral MSE</span>
                     <span class="value" id="val-mse">--.--</span>
                 </div>
                 <div class="metric-box">
-                    <span class="label">ONSET F1</span>
+                    <span class="label">Note F1</span>
                     <span class="value" id="val-f1">--.--</span>
                 </div>
                 <div class="metric-box">
-                    <span class="label">MFCC DIST</span>
+                    <span class="label">MFCC Dist</span>
                     <span class="value" id="val-mfcc">--.--</span>
                 </div>
             </div>
-            
-            <audio id="audioPlayer" controls style="width: 100%; margin-top: 15px;"></audio>
+
+            <div style="margin-top: 20px; display: flex; align-items: center; gap: 20px;">
+                <audio id="audioPlayer" controls style="flex: 1;"></audio>
+                <div id="renderStatus" class="sys-info" style="font-size: 10px;">
+                    <span class="led-indicator" id="statusLed"></span>
+                    <span id="statusText">OUTPUT: NONE</span>
+                </div>
+            </div>
         </div>
 
     </div>
