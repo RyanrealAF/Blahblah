@@ -1,0 +1,18 @@
+### **Failure Demo Description**
+
+This document explains the behavior demonstrated in the system during normal and adversarial conditions.
+
+1.  **00:00 - 00:15 (Normal Operation):**
+    *   **Input:** Clean piano recording.
+    *   **System Action:** Track A extracts notes with high confidence. Track B renders them with humanization (jittered velocity and timing).
+    *   **Result:** High fidelity MIDI reconstruction and expressive audio playback.
+
+2.  **00:15 - 00:35 (Adversarial Input):**
+    *   **Input:** High-entropy white noise or heavy distortion.
+    *   **System Action:** The spectral flatness exceeds the honesty threshold (>0.5).
+    *   **Failure Honesty:** The system logs "Input too noisy" and abstains from producing hallucinated notes. JSON diagnostics reflect the failure status.
+
+3.  **00:35 - 00:60 (Ablation Comparison):**
+    *   **Baseline:** Full pipeline with humanization.
+    *   **Ablation B1:** Rendered without humanization.
+    *   **Comparison:** The baseline sounds "alive" due to subtle variations, while the ablated version sounds mechanical and "locked to grid."

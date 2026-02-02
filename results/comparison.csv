@@ -1,0 +1,4 @@
+spectral_mse,mfcc_dist,onset_f1,note_f1,Run
+126.62300109863281,24905.740234375,0.85,0.78,Baseline
+128.4788055419922,,,,Ablation A1 (High Thresh)
+126.62300109863281,,,,Ablation B1 (No Humanize)

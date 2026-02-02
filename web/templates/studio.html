@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Audio Lab // WAV-MIDI-WAV</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/rack.css') }}">
+</head>
+<body>
+    <div class="studio-rack">
+        
+        <!-- HEADER -->
+        <div class="rack-header">
+            <div class="brand">AI STUDIO <span class="blink">●</span> ONLINE</div>
+            <div class="cpu-load">SYS_SEED: 42 // ENV: DOCKER</div>
+        </div>
+
+        <!-- MODULE A: INPUT & SPECTRAL ANALYSIS -->
+        <div class="rack-module">
+            <div class="module-title">TRACK A: SPECTRAL INGEST</div>
+            <div class="control-panel">
+                <div class="file-drop-zone" id="dropZone">
+                    <input type="file" id="audioInput" accept=".wav" hidden>
+                    <p>DROP WAV FILE HERE OR CLICK TO LOAD</p>
+                </div>
+                <div class="knob-group">
+                    <label>CONFIDENCE THRESHOLD</label>
+                    <input type="range" id="thresholdKnob" min="0.1" max="0.9" step="0.1" value="0.6">
+                    <span id="threshValue" class="led-display">0.6</span>
+                </div>
+                <button id="transcribeBtn" class="rack-btn disabled">INITIATE TRANSCRIBE</button>
+            </div>
+            <!-- Real Canvas Waveform -->
+            <canvas id="inputCanvas" width="800" height="100"></canvas>
+            <div class="console-log" id="logTrackA">WAITING FOR INPUT...</div>
+        </div>
+
+        <!-- MODULE B: SYNTHESIS & HUMANIZATION -->
+        <div class="rack-module">
+            <div class="module-title">TRACK B: NEURAL RENDERER</div>
+            <div class="control-panel">
+                <div class="switch-group">
+                    <label>HUMANIZATION</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="humanizeSwitch" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="knob-group">
+                    <label>SEED VARIATION</label>
+                    <input type="number" id="seedInput" value="42" class="led-input">
+                </div>
+                <button id="renderBtn" class="rack-btn disabled">RENDER AUDIO</button>
+            </div>
+            
+            <!-- Output Visualization -->
+            <canvas id="outputCanvas" width="800" height="100"></canvas>
+            
+            <div class="metrics-grid" id="metricsDisplay">
+                <div class="metric-box">
+                    <span class="label">SPECTRAL MSE</span>
+                    <span class="value" id="val-mse">--.--</span>
+                </div>
+                <div class="metric-box">
+                    <span class="label">ONSET F1</span>
+                    <span class="value" id="val-f1">--.--</span>
+                </div>
+                <div class="metric-box">
+                    <span class="label">MFCC DIST</span>
+                    <span class="value" id="val-mfcc">--.--</span>
+                </div>
+            </div>
+            
+            <audio id="audioPlayer" controls style="width: 100%; margin-top: 15px;"></audio>
+        </div>
+
+    </div>
+    <script src="{{ url_for('static', filename='js/deck.js') }}"></script>
+</body>
+</html>

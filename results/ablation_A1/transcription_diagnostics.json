@@ -1,0 +1,13 @@
+{
+  "confidence": 0.999970018863678,
+  "polyphony_max": 72,
+  "warnings": [
+    "Low signal-to-noise ratio",
+    "High polyphony detected at 0.00s",
+    "High polyphony detected at 0.02s",
+    "High polyphony detected at 0.05s",
+    "High polyphony detected at 0.07s",
+    "High polyphony detected at 2.00s"
+  ],
+  "status": "success"
+}
