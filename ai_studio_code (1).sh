@@ -1,0 +1,1 @@
+docker run --entrypoint ./ablations/run_ablation_B1.sh wav2midi

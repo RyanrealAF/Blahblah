@@ -1,0 +1,22 @@
+submission/
+├── Dockerfile
+├── run.sh
+├── requirements.txt
+├── README.md
+├── pipeline/
+│   ├── __init__.py
+│   ├── transcribe.py       # Track A: WAV → MIDI (with confidence gating)
+│   ├── render.py           # Track B: MIDI → WAV (with humanization)
+│   ├── metrics.py          # Sonic Truth evaluation
+│   └── utils.py            # Seeding and Logging
+├── ablations/
+│   ├── run_ablation_A1.sh  # Remove CQT/Spectral features
+│   ├── run_ablation_B1.sh  # Remove Humanization
+│   └── compare.py          # CSV Generator
+├── model/
+│   └── config.json         # Model hyperparameters
+├── results/
+│   └── .keep
+├── tests/
+│   └── test_determinism.py
+└── failure_demo.txt        # Description of the MP4 content
