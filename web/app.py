@@ -6,7 +6,6 @@ from flask import Flask, render_template, request, jsonify, send_from_directory
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# Use temporary directories for results in web mode
 UPLOAD_FOLDER = '/tmp/results/uploads'
 OUTPUT_FOLDER = '/tmp/results/renders'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -16,20 +15,65 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 def index():
     return render_template('studio.html')
 
-@app.route('/api/transcribe', methods=['POST'])
-def transcribe():
+@app.route('/api/separate', methods=['POST'])
+def separate():
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
-    
-    threshold = float(request.form.get('threshold', 0.6))
-    
+
     input_path = os.path.join(UPLOAD_FOLDER, 'input.wav')
     file.save(input_path)
 
-    # Execute Track A (Transcribe)
+    cmd = [
+        "python3", "-u", "pipeline/separate.py",
+        "--input", input_path,
+        "--outdir", OUTPUT_FOLDER,
+        "--seed", "42"
+    ]
+
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+
+        diag_path = os.path.join(OUTPUT_FOLDER, "separation_diagnostics.json")
+        diagnostics = {}
+        if os.path.exists(diag_path):
+            with open(diag_path, 'r') as f:
+                diagnostics = json.load(f)
+
+        # Return stem URLs
+        stems = {}
+        for stem in diagnostics.get("stems_created", []):
+            stems[stem] = f"/results/stems/{stem}.wav"
+
+        return jsonify({
+            'status': 'success',
+            'diagnostics': diagnostics,
+            'stems_created': diagnostics.get("stems_created", []),
+            'stems': stems
+        })
+    except subprocess.CalledProcessError as e:
+        return jsonify({'error': 'Separation Failed', 'details': e.stderr}), 500
+
+@app.route('/api/transcribe', methods=['POST'])
+def transcribe():
+    threshold = float(request.form.get('threshold', 0.6))
+    stem = request.form.get('stem')
+
+    if stem:
+        input_path = os.path.join(OUTPUT_FOLDER, "stems", f"{stem}.wav")
+    else:
+        if 'file' in request.files:
+            file = request.files['file']
+            input_path = os.path.join(UPLOAD_FOLDER, 'input.wav')
+            file.save(input_path)
+        else:
+            input_path = os.path.join(UPLOAD_FOLDER, 'input.wav')
+
+    if not os.path.exists(input_path):
+        return jsonify({'error': f'Input file not found: {input_path}'}), 400
+
     cmd_a = [
         "python3", "-u", "pipeline/transcribe.py",
         "--input", input_path,
@@ -64,7 +108,6 @@ def render():
     wav_path = os.path.join(OUTPUT_FOLDER, 'rendered.wav')
     json_path = os.path.join(OUTPUT_FOLDER, 'metrics.json')
 
-    # Execute Track B (Render)
     cmd_b = [
         "python3", "-u", "pipeline/render.py",
         "--midi", midi_path,
@@ -79,7 +122,6 @@ def render():
     except subprocess.CalledProcessError as e:
         return jsonify({'error': 'Rendering Failed', 'details': e.stderr}), 500
 
-    # Calculate Metrics
     subprocess.run([
         "python3", "pipeline/metrics.py",
         "--ref", input_path, "--hyp", wav_path,

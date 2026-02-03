@@ -17,13 +17,40 @@
             </div>
         </div>
 
-        <!-- MODULE A: TRANSCRIPTION ENGINE -->
-        <div class="rack-module" id="moduleA">
-            <div class="module-title">Track A: Transcription Engine</div>
+        <!-- MODULE S: SOURCE SEPARATOR -->
+        <div class="rack-module" id="moduleS">
+            <div class="module-title">Unit 00: Source Separator</div>
             <div class="control-panel">
                 <div class="file-drop-zone" id="dropZone">
                     <input type="file" id="audioInput" accept=".wav" hidden>
                     <p>LOAD SOURCE TAPE (.WAV)</p>
+                </div>
+
+                <div class="stem-monitor">
+                    <div class="stem-led" data-stem="vocals"><span>VOC</span><div class="led"></div></div>
+                    <div class="stem-led" data-stem="bass"><span>BAS</span><div class="led"></div></div>
+                    <div class="stem-led" data-stem="drums"><span>DRM</span><div class="led"></div></div>
+                    <div class="stem-led" data-stem="other"><span>OTH</span><div class="led"></div></div>
+                </div>
+
+                <button id="separateBtn" class="rack-btn disabled">Separate Stems</button>
+            </div>
+            <div class="console-log" id="logSeparate" style="height: 40px;">AWAITING TAPE LOAD...</div>
+        </div>
+
+        <!-- MODULE A: TRANSCRIPTION ENGINE -->
+        <div class="rack-module" id="moduleA">
+            <div class="module-title">Track A: Transcription Engine</div>
+            <div class="control-panel">
+                <div class="stem-selector">
+                    <label class="knob-label">Target Stem</label>
+                    <select id="stemSelect" class="led-display" style="margin-top: 10px; width: 100px;">
+                        <option value="original">Original</option>
+                        <option value="vocals">Vocals</option>
+                        <option value="bass">Bass</option>
+                        <option value="drums">Drums</option>
+                        <option value="other">Other</option>
+                    </select>
                 </div>
 
                 <div class="knob-container">

@@ -1,11 +1,16 @@
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('audioInput');
+const separateBtn = document.getElementById('separateBtn');
 const transcribeBtn = document.getElementById('transcribeBtn');
 const renderBtn = document.getElementById('renderBtn');
+const logS = document.getElementById('logSeparate');
 const logA = document.getElementById('logTrackA');
 const statusLed = document.getElementById('statusLed');
 const statusText = document.getElementById('statusText');
+const stemSelect = document.getElementById('stemSelect');
+
 let currentFile = null;
+let separatedStems = {};
 
 // Audio Context for Visualization
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -22,14 +27,12 @@ function initKnob(knob) {
     function updateKnob(val) {
         val = Math.max(min, Math.min(max, val));
         knob.dataset.value = val;
-        // Map 0.1-0.9 to -135 to 135 degrees
         const percent = (val - min) / (max - min);
         const deg = -135 + (percent * 270);
         knob.style.transform = `rotate(${deg}deg)`;
         if (display) display.textContent = val.toFixed(2);
     }
 
-    // Set initial rotation
     updateKnob(startVal);
 
     knob.addEventListener('mousedown', e => {
@@ -63,10 +66,14 @@ function handleFile(e) {
         currentFile = file;
         dropZone.querySelector('p').textContent = `LOADED: ${file.name.toUpperCase()}`;
         dropZone.style.borderColor = 'var(--led-cyan)';
-        transcribeBtn.classList.remove('disabled');
-        transcribeBtn.classList.add('active-btn');
+        separateBtn.classList.remove('disabled');
+        separateBtn.classList.add('active-btn');
         visualizeAudio(file, 'inputCanvas');
-        logA.textContent = "> SOURCE TAPE LOADED. ANALYZER READY.";
+        logS.textContent = "> SOURCE TAPE LOADED. SEPARATOR READY.";
+
+        // Reset stems
+        separatedStems = {};
+        document.querySelectorAll('.stem-led').forEach(led => led.classList.remove('active'));
     }
 }
 
@@ -92,7 +99,6 @@ async function visualizeAudio(fileOrUrl, canvasId) {
         ctx.fillStyle = "#080808";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Draw grid lines
         ctx.strokeStyle = "#1a1a1a";
         ctx.lineWidth = 1;
         for(let x=0; x<canvas.width; x+=50) {
@@ -121,16 +127,61 @@ async function visualizeAudio(fileOrUrl, canvasId) {
     }
 }
 
-// 4. Track A: Transcribe
-transcribeBtn.addEventListener('click', async () => {
-    if (!currentFile || transcribeBtn.classList.contains('disabled')) return;
+// 4. Track S: Separate
+separateBtn.addEventListener('click', async () => {
+    if (!currentFile || separateBtn.classList.contains('disabled')) return;
 
-    logA.textContent = ">>> EXECUTING TRANSCRIBE PIPELINE... [TRACK A]";
+    logS.textContent = ">>> SEPARATING STEMS... [UNIT 00]";
+    separateBtn.textContent = "BUSY...";
+    separateBtn.classList.add('blink');
+
+    const formData = new FormData();
+    formData.append('file', currentFile);
+
+    try {
+        const res = await fetch('/api/separate', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        separatedStems = data.stems; // {vocals: url, bass: url, ...}
+
+        data.stems_created.forEach(stem => {
+            const led = document.querySelector(`.stem-led[data-stem="${stem}"]`);
+            if (led) led.classList.add('active');
+        });
+
+        logS.innerHTML = `> SEPARATION COMPLETE.<br>> STEMS: ${data.stems_created.join(', ').toUpperCase()}`;
+        separateBtn.textContent = "DONE";
+        separateBtn.classList.remove('active-btn', 'blink');
+        separateBtn.classList.add('disabled');
+
+        transcribeBtn.classList.remove('disabled');
+        transcribeBtn.classList.add('active-btn');
+
+    } catch (err) {
+        logS.textContent = "!! ERROR: " + err.message;
+        separateBtn.textContent = "FAIL";
+        separateBtn.classList.remove('blink');
+    }
+});
+
+// 5. Track A: Transcribe
+transcribeBtn.addEventListener('click', async () => {
+    if (transcribeBtn.classList.contains('disabled')) return;
+
+    const targetStem = stemSelect.value;
+    logA.textContent = `>>> TRANSCRIBING ${targetStem.toUpperCase()}... [TRACK A]`;
     transcribeBtn.textContent = "BUSY...";
     transcribeBtn.classList.add('blink');
 
     const formData = new FormData();
-    formData.append('file', currentFile);
+    if (targetStem === 'original') {
+        formData.append('file', currentFile);
+    } else {
+        // We'll tell the backend which stem to use from the last separation
+        formData.append('stem', targetStem);
+    }
     formData.append('threshold', document.getElementById('thresholdKnob').dataset.value);
 
     try {
@@ -159,7 +210,7 @@ transcribeBtn.addEventListener('click', async () => {
     }
 });
 
-// 5. Track B: Render
+// 6. Track B: Render
 renderBtn.addEventListener('click', async () => {
     if (renderBtn.classList.contains('disabled')) return;
 
@@ -176,16 +227,13 @@ renderBtn.addEventListener('click', async () => {
         const data = await res.json();
         if (data.error) throw new Error(data.error);
 
-        // Update Metrics
         document.getElementById('val-mse').textContent = data.metrics.spectral_mse.toFixed(4);
         document.getElementById('val-f1').textContent = data.metrics.note_f1.toFixed(2);
         document.getElementById('val-mfcc').textContent = data.metrics.mfcc_dist.toFixed(0);
 
-        // Play Audio
         const player = document.getElementById('audioPlayer');
         player.src = data.audio_url + '?t=' + new Date().getTime();
 
-        // Visualize Output
         visualizeAudio(data.audio_url, 'outputCanvas');
 
         renderBtn.textContent = "RENDER DONE";

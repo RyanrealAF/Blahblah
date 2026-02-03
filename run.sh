@@ -20,7 +20,15 @@ mkdir -p "$OUTPUT_DIR"
 # Save environment info
 echo "{\"seed\": $SEED, \"python_version\": \"$(python3 --version)\", \"numpy_version\": \"$(python3 -c "import numpy; print(numpy.__version__)")\"}" > "$OUTPUT_DIR/env.json"
 
+# 0. Track S: Source Separation
+echo "[*] Track S: Separating Stems..."
+python3 -u pipeline/separate.py \
+    --input "$INPUT_FILE" \
+    --outdir "$OUTPUT_DIR" \
+    --seed "$SEED"
+
 # 1. Track A: WAV -> MIDI (Transcribe)
+# By default, transcribe the original file in CLI mode
 echo "[*] Track A: Transcribing..."
 python3 -u pipeline/transcribe.py \
     --input "$INPUT_FILE" \
