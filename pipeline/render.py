@@ -10,6 +10,18 @@ import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from utils import set_seed, save_diagnostics
 
+def get_resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller. """
+    if getattr(sys, 'frozen', False):
+        # We are running in a bundle, resources are in the temp folder
+        base_path = sys._MEIPASS
+    else:
+        # We are running in a normal Python environment
+        # Assume script is in Blahblah/pipeline/
+        base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+
+    return os.path.join(base_path, relative_path)
+
 def apply_humanization(mid, seed):
     """
     Injects micro-timing jitter and velocity curves.
@@ -46,23 +58,29 @@ def render(args):
     
     # 3. Synthesis (using FluidSynth as the reliable backend)
     # We use FluidSynth here for container robustness.
-    # Check if FluidSynth and SoundFont are available
-    soundfont = "/usr/share/sounds/sf2/FluidR3_GM.sf2"
+    # Locate bundled resources for Windows executable compatibility.
+    soundfont = get_resource_path(os.path.join('data', 'FluidR3_GM.sf2'))
+
+    # On Windows, we expect a bundled fluidsynth.exe
+    if sys.platform == "win32":
+        fluidsynth_exe = get_resource_path(os.path.join('vendor', 'fluidsynth', 'bin', 'fluidsynth.exe'))
+    else: # Assume it's in PATH on Linux/macOS
+        fluidsynth_exe = "fluidsynth"
+
     if not os.path.exists(soundfont):
-        # Fallback to another common location or error
-        soundfont = "/usr/share/sounds/sf3/default-gm.sf3"
-        if not os.path.exists(soundfont):
-             # Just a placeholder if we can't find it, though in a real environment it should be there.
-             # For the sake of this task, I'll assume it's where it should be based on Dockerfile.
-             pass
+        diagnostics["error"] = f"Soundfont file not found at {soundfont}"
+        save_diagnostics(diagnostics, args.out.replace(".wav", "_diagnostics.json"))
+        print(f"[!] {diagnostics['error']}")
+        return
 
     cmd = [
-        "fluidsynth", "-ni", soundfont, temp_midi,
+        fluidsynth_exe, "-ni", soundfont, temp_midi,
         "-F", args.out, "-r", "44100", "-g", "1.0"
     ]
     
     try:
-        subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # Use capture_output to get stdout/stderr if an error occurs
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
     except Exception as e:
         diagnostics["error"] = str(e)
     

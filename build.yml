@@ -1,0 +1,76 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+        
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+        
+    - name: Download and Setup FluidSynth
+      shell: powershell
+      run: |
+        # Create directory structure expected by blahblah.spec
+        New-Item -ItemType Directory -Force -Path vendor\fluidsynth
+        
+        # Download FluidSynth (using a specific version for stability)
+        $fsUrl = "https://github.com/FluidSynth/fluidsynth/releases/download/v2.3.4/fluidsynth-2.3.4-win10-x64.zip"
+        $fsZip = "fluidsynth.zip"
+        Invoke-WebRequest -Uri $fsUrl -OutFile $fsZip
+        
+        # Extract to vendor/fluidsynth
+        Expand-Archive -Path $fsZip -DestinationPath vendor\fluidsynth -Force
+        
+        # Verify executable exists
+        if (-Not (Test-Path "vendor\fluidsynth\bin\fluidsynth.exe")) {
+            Write-Error "FluidSynth executable not found!"
+            exit 1
+        }
+        
+    - name: Download SoundFont
+      shell: powershell
+      run: |
+        New-Item -ItemType Directory -Force -Path data
+        # Download FluidR3_GM.sf2
+        $sfUrl = "https://github.com/urish/cinto/raw/master/media/FluidR3_GM.sf2"
+        Invoke-WebRequest -Uri $sfUrl -OutFile "data\FluidR3_GM.sf2"
+        
+    - name: Build Executable
+      run: |
+        pyinstaller blahblah.spec
+        
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: blahblah-windows
+        path: dist/blahblah.exe
+        
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: dist/blahblah.exe
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

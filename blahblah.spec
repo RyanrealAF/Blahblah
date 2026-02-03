@@ -6,13 +6,14 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[
-        # Include soundfile dependencies
-        ('C:\\Windows\\System32\\libsndfile-1.dll', '.'),
-        # Include fluidsynth for MIDI rendering
-        ('C:\\Program Files\\FluidSynth\\bin\\fluidsynth.exe', '.'),
-        ('C:\\Program Files\\FluidSynth\\share\\soundfonts\\FluidR3_GM.sf2', 'soundfonts/'),
+        # Include fluidsynth binaries (downloaded in CI/setup)
+        # Source path (relative to spec) -> Dest path (inside bundle)
+        ('vendor/fluidsynth/bin/fluidsynth.exe', 'vendor/fluidsynth/bin'),
+        ('vendor/fluidsynth/bin/*.dll', 'vendor/fluidsynth/bin'),
     ],
     datas=[
+        # Include soundfont (downloaded in CI/setup)
+        ('data/FluidR3_GM.sf2', 'data'),
         # Include all pipeline modules
         ('pipeline/', 'pipeline/'),
         # Include web templates and static files
@@ -20,8 +21,8 @@ a = Analysis(
         ('web/static/', 'web/static/'),
         # Include requirements.txt for reference
         ('requirements.txt', '.'),
-        # Include model config
-        ('model/config.json', 'model/'),
+        # Include model directory
+        ('model/', 'model/'),
         # Include ablations directory
         ('ablations/', 'ablations/'),
     ],

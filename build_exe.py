@@ -17,14 +17,17 @@ def check_dependencies():
         subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'pyinstaller'])
     
     # Check if required Python packages are installed
-    required_packages = [
-        'librosa', 'numpy', 'scipy', 'mido', 'pretty_midi', 'soundfile',
-        'torch', 'pandas', 'flask', 'uvicorn', 'mir_eval', 'tqdm', 'PIL'
-    ]
+    print("[*] Checking Python packages from requirements.txt...")
+    try:
+        with open('requirements.txt', 'r') as f:
+            required_packages = [line.strip() for line in f if line.strip() and not line.startswith('#')]
+    except FileNotFoundError:
+        print("[!] requirements.txt not found. Cannot check dependencies.")
+        return False
     
     for package in required_packages:
         try:
-            __import__(package)
+            __import__(package.split('==')[0].split('>')[0].split('<')[0]) # Handle version specifiers
             print(f"[*] {package} found")
         except ImportError:
             print(f"[!] {package} not found. Please install it.")
@@ -69,14 +72,19 @@ def build_executable():
     print(f"[*] Running: {' '.join(cmd)}")
     
     try:
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
-        print("[*] Build successful!")
-        print(result.stdout)
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"[!] Build failed: {e}")
-        print("STDOUT:", e.stdout)
-        print("STDERR:", e.stderr)
+        # Run with real-time output, like in the debug script
+        process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                 universal_newlines=True, bufsize=1)
+
+        for line in iter(process.stdout.readline, ''):
+            print(line.rstrip())
+
+        process.wait()
+
+        if process.returncode == 0:
+            print("[*] Build successful!")
+            return True
+        print(f"[!] Build failed with return code: {process.returncode}")
         return False
 
 def create_installer():
