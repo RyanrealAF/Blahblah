@@ -14,6 +14,77 @@ let separatedStems = {};
 
 // Audio Context for Visualization
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let analyser = null;
+let source = null;
+
+// Auto-resume on interaction
+document.addEventListener('click', () => {
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+}, { once: true });
+
+const player = document.getElementById('audioPlayer');
+player.addEventListener('play', () => {
+    audioCtx.resume();
+    initAudioAnalysis();
+});
+
+function initAudioAnalysis() {
+    if (analyser) return;
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    const player = document.getElementById('audioPlayer');
+    source = audioCtx.createMediaElementSource(player);
+    source.connect(analyser);
+    analyser.connect(audioCtx.destination);
+    updateVUMeters();
+}
+
+function updateVUMeters() {
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(dataArray);
+
+    // Calculate levels for different frequency bands
+    const getBandLevel = (start, end) => {
+        let sum = 0;
+        for (let i = start; i < end; i++) sum += dataArray[i];
+        return (sum / (end - start)) / 128 * 100;
+    };
+
+    const lowLevel = Math.min(100, getBandLevel(0, 10));
+    const midLevel = Math.min(100, getBandLevel(10, 50));
+    const highLevel = Math.min(100, getBandLevel(50, 100));
+    const fullLevel = (lowLevel + midLevel + highLevel) / 3;
+
+    // Update Master VU
+    const vuL = document.getElementById('vu-L');
+    const vuR = document.getElementById('vu-R');
+    if (vuL) vuL.style.width = `${fullLevel}%`;
+    if (vuR) vuR.style.width = `${Math.min(100, fullLevel * 0.95 + (Math.random() * 5))}%`;
+
+    // Update Vertical Meters with different bands for aesthetic variety
+    updateVerticalMeter('vuMeterS', lowLevel);
+    updateVerticalMeter('vuMeterA', midLevel);
+    updateVerticalMeter('vuMeterB', highLevel);
+
+    requestAnimationFrame(updateVUMeters);
+}
+
+function updateVerticalMeter(id, level) {
+    const meter = document.getElementById(id);
+    if (!meter) return;
+    const segments = Array.from(meter.querySelectorAll('.segment')).reverse();
+    const activeCount = Math.floor((level / 100) * segments.length);
+
+    segments.forEach((seg, i) => {
+        if (i < activeCount) {
+            seg.classList.add('active');
+        } else {
+            seg.classList.remove('active');
+        }
+    });
+}
 
 // 1. Knob Logic
 function initKnob(knob) {
