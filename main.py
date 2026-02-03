@@ -10,17 +10,26 @@ import subprocess
 import time
 import webbrowser
 import threading
+import traceback
 from pathlib import Path
 
 # Add current directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# Handle PyInstaller path issues
+if getattr(sys, 'frozen', False):
+    # Running as compiled executable
+    os.chdir(sys._MEIPASS)
+else:
+    # Running as script
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def run_pipeline(args):
     """Run the main pipeline (equivalent to run.sh)"""
     from pipeline.separate import separate
     from pipeline.transcribe import transcribe
     from pipeline.render import render
-    from pipeline.metrics import calculate_metrics
+    from pipeline.metrics import main as calculate_metrics
     import json
     
     print("[*] Starting Blahblah Pipeline...")
@@ -117,7 +126,7 @@ def open_browser(port=5000):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Blahblah: WAV↔MIDI Conversion System",
+        description="Blahblah: WAV MIDI Conversion System",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

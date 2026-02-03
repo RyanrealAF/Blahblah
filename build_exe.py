@@ -60,13 +60,9 @@ def build_executable():
     if os.path.exists('build'):
         shutil.rmtree('build')
     
-    # Run PyInstaller
+    # Run PyInstaller with the spec file
     cmd = [
         sys.executable, '-m', 'PyInstaller',
-        '--onefile',
-        '--windowed',  # Remove this if you want console output
-        '--name', 'blahblah',
-        '--icon', 'icon.ico',
         'blahblah.spec'
     ]
     
